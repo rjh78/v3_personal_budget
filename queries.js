@@ -1,3 +1,27 @@
+//categoryArray is for testing that modules are working.
+//once API is connected to Postgres, the array will not
+//be needed.
+let categoryArray = [
+  {
+    catId: 1,
+    catName: "Food-Market",
+    catBudget: 350,
+  },
+  {
+    catId: 2,
+    catName: "Rent",
+    catBudget: 1500,
+  },
+  {
+    catId: 3,
+    catName: "Auto-Gas",
+    catBudget: 80,
+  },
+];
+
+//needed while using the category Array for testing
+let catId = 4;
+
 //create a new category where the category name and dollar
 //amt are sent in the request body.
 //POSTMAN TESTING NOTE: BODY DATA MUST BE FORMATTED AS JSON,
@@ -37,10 +61,10 @@ const getCategoryById = (req, res) => {
 
 /*
   Probably more complicated than it should be. Does the following:
-  1. updates category name only
-  2. updates category budget amount only
-  3. updates both name and budget amounts
-  4. subtracts expense from specified category budget
+  1. updates category name only (Action = updateName)
+  2. updates category budget amount only (Action = updateBudget)
+  3. updates both name and budget amounts (Action = updateNameAndBudget)
+  4. subtracts expense from specified category budget (Action = subtractExpense)
 */
 const updateCategory = (req, res, next) => {
   let searchId = Number(req.params.catId);
@@ -89,7 +113,9 @@ const updateCategory = (req, res, next) => {
         }
         break;
       default:
-        return res.status(500).send("Invalid Action or no Action specified.");
+        return res
+          .status(500)
+          .send("Invalid Action or no Action specified in query parameter.");
     }
     res.status(200).json(categoryArray);
   } else {
@@ -123,7 +149,7 @@ const transferBetweenCategories = (req, res, next) => {
   res
     .status(200)
     .send(
-      `${transferAmt} transferred from ${categoryArray[fromIndex].catName} to ${categoryArray[toIndex].catName}.`
+      `$${transferAmt} transferred from ${categoryArray[fromIndex].catName} to ${categoryArray[toIndex].catName}.`
     );
 };
 
