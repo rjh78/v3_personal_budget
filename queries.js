@@ -1,3 +1,10 @@
+/*
+    dotenv module loads environment variables from a .env file into process.env.
+    .env is added to .gitignore to keep DB credentials out of source control.
+    Load environment variables using the dotenv module.
+
+    '{Pool} = require pg' is a destructuring assignment in JavaScript to import the Pool class from the pg module. The pg module is the official PostgreSQL client for Node.js, which allows you to interact with a PostgreSQL database from your Node.js application.
+*/
 require("dotenv").config();
 const { Pool } = require("pg");
 
@@ -11,8 +18,8 @@ const pool = new Pool({
 
 /*
 categoryArray is for testing that modules are working.
-//once API is connected to Postgres, the array will not
-//be needed.
+once API is connected to Postgres, the array will not
+be needed.
 let categoryArray = [
   {
     catId: 1,
@@ -45,10 +52,16 @@ const createCategory = (req, res) => {
   if (catName === "" || catBudget < 0) {
     res.status(404).send("Invalid request body - no name or budget.");
   }
-  const newCategory = { catId: catId, catName: catName, catBudget: catBudget };
-  catId++;
-  categoryArray.push(newCategory);
-  res.status(201).json(newCategory);
+  pool.query(
+    "INSERT INTO category (name, planned_budget) VALUES ($1, $2) RETURNING *",
+    [catName, catBudget],
+    (error, results) => {
+      if (error) {
+        throw error;
+      }
+      res.status(201).send(`Category added with ID ${results.rows[0].id}`);
+    }
+  );
 };
 
 /*
