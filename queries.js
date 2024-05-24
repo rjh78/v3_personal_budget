@@ -59,7 +59,9 @@ const createCategory = (req, res) => {
       if (error) {
         throw error;
       }
-      res.status(201).send(`Category added with ID ${results.rows[0].id}`);
+      res
+        .status(201)
+        .send(`Category added with ID ${results.rows[0].category_id}`);
     }
   );
 };
