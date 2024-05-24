@@ -1,4 +1,16 @@
-//categoryArray is for testing that modules are working.
+require("dotenv").config();
+const { Pool } = require("pg");
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB.PORT,
+});
+
+/*
+categoryArray is for testing that modules are working.
 //once API is connected to Postgres, the array will not
 //be needed.
 let categoryArray = [
@@ -19,8 +31,10 @@ let categoryArray = [
   },
 ];
 
+
 //needed while using the category Array for testing
 let catId = 4;
+*/
 
 //create a new category where the category name and dollar
 //amt are sent in the request body.
@@ -37,6 +51,7 @@ const createCategory = (req, res) => {
   res.status(201).json(newCategory);
 };
 
+/*
 //return all categories created
 const getCategories = (req, res) => {
   if (categoryArray.length > 0) {
@@ -44,6 +59,11 @@ const getCategories = (req, res) => {
   } else {
     res.status(404).send("No categories created yet.");
   }
+};
+*/
+
+const getCategories = (req, res) => {
+  pool.query("", (error, results) => {});
 };
 
 //return a specific category where the category ID is
@@ -142,10 +162,8 @@ const transferBetweenCategories = (req, res, next) => {
       )
     );
   }
-
   categoryArray[fromIndex].catBudget -= transferAmt;
   categoryArray[toIndex].catBudget += transferAmt;
-
   res
     .status(200)
     .send(
