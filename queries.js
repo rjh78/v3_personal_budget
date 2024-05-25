@@ -52,7 +52,9 @@ const getCategories = (req, res) => {
 
 //return a specific category where the category ID is
 //sent in the query parameter. req.params.catId is read
-//as a string, so convert to an integer for endpoint to work
+//as a string, so convert to an integer for endpoint to work.
+//if searchId not found, an empty array is returned, have
+//to check length of results.rows array to find out
 const getCategoryById = (req, res) => {
   let searchId = Number(req.params.catId);
   pool.query(
@@ -74,14 +76,6 @@ const getCategoryById = (req, res) => {
     }
   );
 };
-/*
-  const found = categoryArray.find((element) => element.catId === searchId);
-  if (found) {
-    res.status(200).json(found);
-  } else {
-    res.status(404).send(`Category ID: ${searchId} not found.`);
-  }
-*/
 
 /*
   Probably more complicated than it should be. Does the following:
