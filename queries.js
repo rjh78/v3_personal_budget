@@ -78,7 +78,13 @@ const getCategories = (req, res) => {
 */
 
 const getCategories = (req, res) => {
-  pool.query("", (error, results) => {});
+  pool.query("SELECT * FROM category", (error, results) => {
+    if (error) {
+      console.error("Database query error:", error);
+      return res.status(500).send("Internal Server Error");
+    }
+    res.status(200).json(results.rows);
+  });
 };
 
 //return a specific category where the category ID is
