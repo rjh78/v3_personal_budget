@@ -16,33 +16,6 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-/*
-categoryArray is for testing that modules are working.
-once API is connected to Postgres, the array will not
-be needed.
-let categoryArray = [
-  {
-    catId: 1,
-    catName: "Food-Market",
-    catBudget: 350,
-  },
-  {
-    catId: 2,
-    catName: "Rent",
-    catBudget: 1500,
-  },
-  {
-    catId: 3,
-    catName: "Auto-Gas",
-    catBudget: 80,
-  },
-];
-
-
-//needed while using the category Array for testing
-let catId = 4;
-*/
-
 //create a new category where the category name and dollar
 //amt are sent in the request body.
 //POSTMAN TESTING NOTE: BODY DATA MUST BE FORMATTED AS JSON,
@@ -57,7 +30,8 @@ const createCategory = (req, res) => {
     [catName, catBudget],
     (error, results) => {
       if (error) {
-        throw error;
+        console.error("Database query error:", error);
+        return res.status(500).send("Internal Server Error");
       }
       res
         .status(201)
@@ -65,17 +39,6 @@ const createCategory = (req, res) => {
     }
   );
 };
-
-/*
-//return all categories created
-const getCategories = (req, res) => {
-  if (categoryArray.length > 0) {
-    res.status(200).json(categoryArray);
-  } else {
-    res.status(404).send("No categories created yet.");
-  }
-};
-*/
 
 const getCategories = (req, res) => {
   pool.query("SELECT * FROM category", (error, results) => {
@@ -92,13 +55,33 @@ const getCategories = (req, res) => {
 //as a string, so convert to an integer for endpoint to work
 const getCategoryById = (req, res) => {
   let searchId = Number(req.params.catId);
+  pool.query(
+    "SELECT * FROM category WHERE category_id = $1",
+    [searchId],
+    (error, results) => {
+      if (error) {
+        console.error("Database query error:", error);
+        return res.status(500).send("Internal Server Error");
+      }
+      if (results.rows.length === 0) {
+        res
+          .status(404)
+          .send(
+            `Category Id ${searchId} not found in DB, possibly a deleted record.`
+          );
+      }
+      res.status(200).json(results.rows);
+    }
+  );
+};
+/*
   const found = categoryArray.find((element) => element.catId === searchId);
   if (found) {
     res.status(200).json(found);
   } else {
     res.status(404).send(`Category ID: ${searchId} not found.`);
   }
-};
+*/
 
 /*
   Probably more complicated than it should be. Does the following:
