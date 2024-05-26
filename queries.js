@@ -96,6 +96,9 @@ const updateCategory = (req, res, next) => {
     "expenseAmt or catBudget must be a positive number."
   );
   const nameErr = new Error("Category Name is invalid or missing.");
+  const actionErr = new Error(
+    "Invalid Action or no Action specified in query parameter."
+  );
 
   if (found) {
     switch (action) {
@@ -131,9 +134,7 @@ const updateCategory = (req, res, next) => {
         }
         break;
       default:
-        return res
-          .status(500)
-          .send("Invalid Action or no Action specified in query parameter.");
+        return res.status(500).send(actionErr);
     }
     res.status(200).json(categoryArray);
   } else {
@@ -174,16 +175,24 @@ const transferBetweenCategories = (req, res, next) => {
 //of the array
 const deleteCategory = (req, res, next) => {
   let searchId = Number(req.params.catId);
-  let catIndex = categoryArray.findIndex(
-    (element) => element.catId === searchId
+
+  pool.query(
+    "DELETE FROM category WHERE category_id = $1",
+    [searchId],
+    (error, results) => {
+      if (error) {
+        //return next(error);
+        console.error("Database query error:", error);
+        return res.status(500).send("Internal Server Error");
+      }
+      if (results.rowCount === 0) {
+        return next(
+          new Error(`Category ID ${searchId} not found. No deletion done.`)
+        );
+      }
+      res.status(200).send(`Category ID ${searchId} successfully deleted.`);
+    }
   );
-  if (catIndex === -1) {
-    return next(
-      new Error(`Category ID ${searchId} not found. No deletion done.`)
-    );
-  }
-  categoryArray.splice(catIndex, 1);
-  res.status(200).send(`Category ID ${searchId} successfully deleted.`);
 };
 
 module.exports = {
