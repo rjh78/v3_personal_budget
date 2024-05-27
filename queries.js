@@ -32,8 +32,7 @@ const createCategory = (req, res) => {
     [name, planned_budget],
     (error, results) => {
       if (error) {
-        console.error("Database query error:", error);
-        return res.status(500).send("Internal Server Error");
+        return next(error);
       }
       res
         .status(201)
@@ -45,27 +44,25 @@ const createCategory = (req, res) => {
 const getCategories = (req, res) => {
   pool.query("SELECT * FROM category", (error, results) => {
     if (error) {
-      console.error("Database query error:", error);
-      return res.status(500).send("Internal Server Error");
+      return next(error);
     }
     res.status(200).json(results.rows);
   });
 };
 
 //return a specific category where the category ID is
-//sent in the query parameter. req.params.catId is read
+//sent in the query parameter. req.params.category_id is read
 //as a string, so convert to an integer for endpoint to work.
 //if searchId not found, an empty array is returned, have
 //to check length of results.rows array to find out
 const getCategoryById = (req, res) => {
-  let searchId = Number(req.params.catId);
+  let searchId = Number(req.params.category_id);
   pool.query(
     "SELECT * FROM category WHERE category_id = $1",
     [searchId],
     (error, results) => {
       if (error) {
-        console.error("Database query error:", error);
-        return res.status(500).send("Internal Server Error");
+        return next(error);
       }
       if (results.rows.length === 0) {
         res
@@ -80,68 +77,39 @@ const getCategoryById = (req, res) => {
 };
 
 /*
-  Probably more complicated than it should be. Does the following:
-  1. updates category name only (Action = updateName)
-  2. updates category budget amount only (Action = updateBudget)
-  3. updates both name and budget amounts (Action = updateNameAndBudget)
-  4. subtracts expense from specified category budget (Action = subtractExpense)
+  1. updates category name only
+  2. updates category budget amount only
+  3. updates both name and budget amounts
 */
 const updateCategory = (req, res, next) => {
-  let searchId = Number(req.params.catId);
-  let expenseAmt = req.body.expenseAmt;
-  let newBudget = req.body.catBudget;
-  let newName = req.body.catName;
-  let action = req.query.action;
-  let newBalance = 0;
-  let found = categoryArray.find((element) => element.catId === searchId);
-  const dollarErr = new Error(
-    "expenseAmt or catBudget must be a positive number."
-  );
-  const nameErr = new Error("Category Name is invalid or missing.");
-  const actionErr = new Error(
-    "Invalid Action or no Action specified in query parameter."
-  );
+  let searchId = Number(req.params.category_id);
+  let expenseAmt = Number(req.body.expenseAmt);
+  let newBudget =
+    req.body.planned_budget !== undefined
+      ? Number(req.body.planned_budget)
+      : null;
+  let newName = req.body.name !== undefined ? req.body.name : null;
+  const dollarErr = "planned_budget value must be >= 0";
 
-  if (found) {
-    switch (action) {
-      case "updateName":
-        if (newName) {
-          found.catName = newName;
-        } else {
-          return next(nameErr);
-        }
-        break;
-      case "updateBudget":
-        if (newBudget > 0) {
-          found.catBudget = newBudget;
-        } else {
-          return next(dollarErr);
-        }
-        break;
-      case "updateNameAndBudget":
-        if (newBudget > 0 && newName) {
-          found.catName = newName;
-          found.catBudget = newBudget;
-        } else {
-          return next(
-            new Error("Either name or budget is invalid or missing.")
-          );
-        }
-        break;
-      case "subtractExpense":
-        if (expenseAmt > 0) {
-          found.catBudget -= expenseAmt;
-        } else {
-          return next(dollarErr);
-        }
-        break;
-      default:
-        return res.status(500).send(actionErr);
-    }
-    res.status(200).json(categoryArray);
-  } else {
-    res.status(404).send(`Category ID: ${searchId} not found.`);
+  if (newBudget < 0) {
+    return next(new Error(dollarErr));
   }
+
+  pool.query(
+    "UPDATE category SET name = COALESCE($1::text, name), planned_budget = COALESCE($2::numeric, planned_budget) WHERE category_id = $3 RETURNING *",
+    [newName, newBudget, searchId],
+    (error, results) => {
+      if (error) {
+        return next(error);
+      }
+      if (results.rowCount === 0) {
+        return next(
+          new Error(`Category ID: ${searchId} not found. No update done.`)
+        );
+      }
+      res.status(200).json(results.rows);
+    }
+  );
 };
 
 //POST request that uses two route parameters and transfers
@@ -196,16 +164,14 @@ const transferBudget = async (req, res, next) => {
 //index of the specified id and then "splicing" it out
 //of the array
 const deleteCategory = (req, res, next) => {
-  let searchId = Number(req.params.catId);
+  let searchId = Number(req.params.category_id);
 
   pool.query(
-    "DELETE FROM category WHERE category_id = $1",
+    "DELETE FROM XYcategory WHERE category_id = $1",
     [searchId],
     (error, results) => {
       if (error) {
-        //return next(error);
-        console.error("Database query error:", error);
-        return res.status(500).send("Internal Server Error");
+        return next(error);
       }
       if (results.rowCount === 0) {
         return next(

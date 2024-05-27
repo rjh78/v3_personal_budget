@@ -15,10 +15,10 @@ app.use(bodyParser.json());
 
 app.post("/categories", db.createCategory);
 app.get("/categories", db.getCategories);
-app.get("/categories/:catId", db.getCategoryById);
-app.put("/categories/:catId", db.updateCategory);
+app.get("/categories/:category_id", db.getCategoryById);
+app.put("/categories/:category_id", db.updateCategory);
 app.post("/categories/transfer/:from/:to", db.transferBudget);
-app.delete("/categories/:catId", db.deleteCategory);
+app.delete("/categories/:category_id", db.deleteCategory);
 
 //Error Handling
 app.use((err, req, res, next) => {
