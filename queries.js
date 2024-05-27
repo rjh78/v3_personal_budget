@@ -21,13 +21,15 @@ const pool = new Pool({
 //POSTMAN TESTING NOTE: BODY DATA MUST BE FORMATTED AS JSON,
 //EXCEPT FOR INTEGERS WHICH ARE NOT QUOTED
 const createCategory = (req, res) => {
-  const { catName, catBudget } = req.body;
-  if (catName === "" || catBudget < 0) {
+  const name = req.body.name;
+  const planned_budget = Number(req.body.planned_budget);
+
+  if (name === "" || planned_budget < 0) {
     res.status(404).send("Invalid request body - no name or budget.");
   }
   pool.query(
     "INSERT INTO category (name, planned_budget) VALUES ($1, $2) RETURNING *",
-    [catName, catBudget],
+    [name, planned_budget],
     (error, results) => {
       if (error) {
         console.error("Database query error:", error);
@@ -142,42 +144,50 @@ const updateCategory = (req, res, next) => {
   }
 };
 
-//POST request that uses two parameters and transfers
+//POST request that uses two route parameters and transfers
 //a value of dollars from one category to another.
 const transferBudget = async (req, res, next) => {
   let fromCategoryId = Number(req.params.from);
   let toCategoryId = Number(req.params.to);
-  let transferAmt = req.body.transferAmt;
+  let transferAmt = Number(req.body.transferAmt);
 
   const client = await pool.connect();
-  try{
-    await client.query('BEGIN');
+  try {
+    await client.query("BEGIN");
 
-    const decreaseResult = await client.query('UPDATE category SET planned_budget = planned_budget - $1 WHERE category_id = $2 RETURNING *', [transferAmt, fromCategoryId]);
+    const decreaseResult = await client.query(
+      "UPDATE category SET planned_budget = planned_budget - $1 WHERE category_id = $2 RETURNING *",
+      [transferAmt, fromCategoryId]
+    );
     if (decreaseResult.rowCount === 0) {
-      throw new Error(`'Transfer From' id ${fromCategoryId} not found. No transfer done.`);
+      return next(
+        new Error(
+          `Transfer_From id ${fromCategoryId} not found. No transfer done.`
+        )
+      );
     }
 
-    const increaseResult = await client.query('UPDATE category SET planned_budget = planned_budget + $1 WHERE category_id = $2 RETURNING *', [transferAmt, toCategoryId]);
+    const increaseResult = await client.query(
+      "UPDATE category SET planned_budget = planned_budget + $1 WHERE category_id = $2 RETURNING *",
+      [transferAmt, toCategoryId]
+    );
     if (increaseResult.rowCount === 0) {
-      throw new Error(`'Transfer To' id ${toCategoryId} not found. No transfer done.`);
+      return next(
+        new Error(`Transfer_To id ${toCategoryId} not found. No transfer done.`)
+      );
     }
 
-    await client.query('COMMIT');
-    res
-    .status(200)
-    .send({
-      message: `$${transferAmt} transferred from ${fromCategoryId} to ${toCategoryId}.`;
+    await client.query("COMMIT");
+    res.status(200).send({
+      message: `$${transferAmt} transferred from ${fromCategoryId} to ${toCategoryId}.`,
       fromCategory: decreaseResult.rows[0],
-      toCategory: increaseResult.rows[0]
+      toCategory: increaseResult.rows[0],
     });
-  }
-  catch (error) {
-    await client.query('ROLLBACK');
+  } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Transaction error:", error);
     return res.status(500).send("Internal Server Error");
-  }
-  finally {
+  } finally {
     client.release();
   }
 };

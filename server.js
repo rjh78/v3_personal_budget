@@ -17,7 +17,7 @@ app.post("/categories", db.createCategory);
 app.get("/categories", db.getCategories);
 app.get("/categories/:catId", db.getCategoryById);
 app.put("/categories/:catId", db.updateCategory);
-app.post("/categories/transfer/:from/:to", db.transferBetweenCategories);
+app.post("/categories/transfer/:from/:to", db.transferBudget);
 app.delete("/categories/:catId", db.deleteCategory);
 
 //Error Handling
