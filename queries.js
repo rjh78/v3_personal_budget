@@ -144,30 +144,42 @@ const updateCategory = (req, res, next) => {
 
 //POST request that uses two parameters and transfers
 //a value of dollars from one category to another.
-const transferBetweenCategories = (req, res, next) => {
-  let fromId = Number(req.params.from);
-  let toId = Number(req.params.to);
+const transferBudget = async (req, res, next) => {
+  let fromCategoryId = Number(req.params.from);
+  let toCategoryId = Number(req.params.to);
   let transferAmt = req.body.transferAmt;
 
-  let fromIndex = categoryArray.findIndex(
-    (element) => element.catId === fromId
-  );
-  let toIndex = categoryArray.findIndex((element) => element.catId === toId);
+  const client = await pool.connect();
+  try{
+    await client.query('BEGIN');
 
-  if (fromIndex === -1 || toIndex === -1) {
-    return next(
-      new Error(
-        `'Transfer From' id ${fromId} or 'Transfer To' id ${toId} not found.`
-      )
-    );
-  }
-  categoryArray[fromIndex].catBudget -= transferAmt;
-  categoryArray[toIndex].catBudget += transferAmt;
-  res
+    const decreaseResult = await client.query('UPDATE category SET planned_budget = planned_budget - $1 WHERE category_id = $2 RETURNING *', [transferAmt, fromCategoryId]);
+    if (decreaseResult.rowCount === 0) {
+      throw new Error(`'Transfer From' id ${fromCategoryId} not found. No transfer done.`);
+    }
+
+    const increaseResult = await client.query('UPDATE category SET planned_budget = planned_budget + $1 WHERE category_id = $2 RETURNING *', [transferAmt, toCategoryId]);
+    if (increaseResult.rowCount === 0) {
+      throw new Error(`'Transfer To' id ${toCategoryId} not found. No transfer done.`);
+    }
+
+    await client.query('COMMIT');
+    res
     .status(200)
-    .send(
-      `$${transferAmt} transferred from ${categoryArray[fromIndex].catName} to ${categoryArray[toIndex].catName}.`
-    );
+    .send({
+      message: `$${transferAmt} transferred from ${fromCategoryId} to ${toCategoryId}.`;
+      fromCategory: decreaseResult.rows[0],
+      toCategory: increaseResult.rows[0]
+    });
+  }
+  catch (error) {
+    await client.query('ROLLBACK');
+    console.error("Transaction error:", error);
+    return res.status(500).send("Internal Server Error");
+  }
+  finally {
+    client.release();
+  }
 };
 
 //deletes the specified category id by finding the array
@@ -200,6 +212,6 @@ module.exports = {
   getCategories,
   getCategoryById,
   updateCategory,
-  transferBetweenCategories,
+  transferBudget,
   deleteCategory,
 };
