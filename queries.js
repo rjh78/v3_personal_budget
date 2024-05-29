@@ -3,7 +3,10 @@
     .env is added to .gitignore to keep DB credentials out of source control.
     Load environment variables using the dotenv module.
 
-    '{Pool} = require pg' is a destructuring assignment in JavaScript to import the Pool class from the pg module. The pg module is the official PostgreSQL client for Node.js, which allows you to interact with a PostgreSQL database from your Node.js application.
+    '{Pool} = require pg' is a destructuring assignment in JavaScript to import 
+    the Pool class from the pg module. The pg module is the official PostgreSQL 
+    client for Node.js, which allows you to interact with a PostgreSQL database 
+    from your Node.js application.
 */
 require("dotenv").config();
 const { Pool } = require("pg");
@@ -77,13 +80,15 @@ const getCategoryById = (req, res) => {
 };
 
 /*
-  1. updates category name only
-  2. updates category budget amount only
-  3. updates both name and budget amounts
+ updates category name only, updates category budget amount only,
+ or updates both name and budget amounts. Ternary Operator does
+ validation for budget and name. COALESCE returns first non-null
+ value and the ::text/::numeric explicitly casts the variable to 
+ a specific datatype. The COALESCE lets the updates be done in a
+ single query and will update name only, budget only, or both.
 */
 const updateCategory = (req, res, next) => {
   let searchId = Number(req.params.category_id);
-  let expenseAmt = Number(req.body.expenseAmt);
   let newBudget =
     req.body.planned_budget !== undefined
       ? Number(req.body.planned_budget)
@@ -112,8 +117,11 @@ const updateCategory = (req, res, next) => {
   );
 };
 
-//POST request that uses two route parameters and transfers
-//a value of dollars from one category to another.
+/*
+POST request that uses two route parameters and transfers
+a value of dollars from one category to another. Permits
+taking $x from one category and moving them to another category.
+*/
 const transferBudget = async (req, res, next) => {
   let fromCategoryId = Number(req.params.from);
   let toCategoryId = Number(req.params.to);
@@ -160,14 +168,12 @@ const transferBudget = async (req, res, next) => {
   }
 };
 
-//deletes the specified category id by finding the array
-//index of the specified id and then "splicing" it out
-//of the array
+//deletes the specified category id
 const deleteCategory = (req, res, next) => {
   let searchId = Number(req.params.category_id);
 
   pool.query(
-    "DELETE FROM XYcategory WHERE category_id = $1",
+    "DELETE FROM category WHERE category_id = $1",
     [searchId],
     (error, results) => {
       if (error) {
@@ -183,6 +189,59 @@ const deleteCategory = (req, res, next) => {
   );
 };
 
+/*
+Adds an expense to expense table
+*/
+const addExpense = async (req, res, next) => {
+  const defaultValues = {
+    date: null,
+    amount: 0,
+    description: null,
+    payment_method: null,
+    entity_id: null,
+    entity_type: null,
+    category_id: null,
+  };
+
+  const {
+    date,
+    amount,
+    description,
+    payment_method,
+    entity_id,
+    entity_type,
+    category_id,
+  } = { ...defaultValues, ...req.body };
+
+  const client = await pool.connect();
+
+  try {
+    await client.query(
+      "INSERT INTO expense (date, amount, description, payment_method, entity_id, entity_type, category_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [
+        date,
+        amount,
+        description,
+        payment_method,
+        entity_id,
+        entity_type,
+        category_id,
+      ],
+      (error, results) => {
+        if (error) {
+          return next(error);
+        }
+        res.status(201).json(results.rows);
+      }
+    );
+  } catch (error) {
+    await client.query("ROLLBACK TRANSACTION");
+    return next(error);
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   createCategory,
   getCategories,
@@ -190,4 +249,5 @@ module.exports = {
   updateCategory,
   transferBudget,
   deleteCategory,
+  addExpense,
 };

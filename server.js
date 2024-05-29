@@ -20,6 +20,8 @@ app.put("/categories/:category_id", db.updateCategory);
 app.post("/categories/transfer/:from/:to", db.transferBudget);
 app.delete("/categories/:category_id", db.deleteCategory);
 
+app.post("/expenses", db.addExpense);
+
 //Error Handling
 app.use((err, req, res, next) => {
   const status = err.status || 500;
