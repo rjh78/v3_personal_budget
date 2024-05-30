@@ -21,6 +21,7 @@ app.post("/categories/transfer/:from/:to", db.transferBudget);
 app.delete("/categories/:category_id", db.deleteCategory);
 
 app.post("/expenses", db.addExpense);
+app.get("/expenses", db.getExpenses);
 
 //Error Handling
 app.use((err, req, res, next) => {
