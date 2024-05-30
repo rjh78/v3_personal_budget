@@ -44,6 +44,7 @@ const createCategory = (req, res) => {
   );
 };
 
+//returns all categories in the category table
 const getCategories = (req, res) => {
   pool.query("SELECT * FROM category", (error, results) => {
     if (error) {
@@ -190,7 +191,10 @@ const deleteCategory = (req, res, next) => {
 };
 
 /*
-Adds an expense to expense table
+Adds an expense to expense table - there is a trigger
+that gets called on an INSERT into the expense table.
+The trigger updates the remaining_balance and 
+actual_balance fields in the category table.
 */
 const addExpense = async (req, res, next) => {
   const defaultValues = {
@@ -242,6 +246,16 @@ const addExpense = async (req, res, next) => {
   }
 };
 
+//returns all expenses listed in the expense table
+const getExpenses = (req, res, next) => {
+  pool.query("SELECT * FROM expense", (error, results) => {
+    if (error) {
+      next(error);
+    }
+    res.status(200).json(results.rows);
+  });
+};
+
 module.exports = {
   createCategory,
   getCategories,
@@ -250,4 +264,5 @@ module.exports = {
   transferBudget,
   deleteCategory,
   addExpense,
+  getExpenses,
 };
