@@ -256,6 +256,27 @@ const getExpenses = (req, res, next) => {
   });
 };
 
+//deletes expense specified by user
+const deleteExpense = (req, res, next) => {
+  let searchId = Number(req.params.expense_id);
+
+  pool.query(
+    "DELETE FROM expense WHERE expense_id = $1",
+    [searchId],
+    (error, results) => {
+      if (error) {
+        next(error);
+      }
+      if (results.rowCount === 0) {
+        return next(
+          new Error(`Expense ID ${searchId} not found. No deletion done.`)
+        );
+      }
+      res.status(200).send(`Expense ID ${searchId} successfully deleted.`);
+    }
+  );
+};
+
 module.exports = {
   createCategory,
   getCategories,
@@ -265,4 +286,5 @@ module.exports = {
   deleteCategory,
   addExpense,
   getExpenses,
+  deleteExpense,
 };

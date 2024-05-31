@@ -22,6 +22,8 @@ app.delete("/categories/:category_id", db.deleteCategory);
 
 app.post("/expenses", db.addExpense);
 app.get("/expenses", db.getExpenses);
+//app.put("/expenses/:expense_id", db.updateExpense);
+app.delete("/expenses/:expense_id", db.deleteExpense);
 
 //Error Handling
 app.use((err, req, res, next) => {
