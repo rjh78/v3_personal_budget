@@ -22,6 +22,7 @@ app.delete("/categories/:category_id", db.deleteCategory);
 
 app.post("/expenses", db.addExpense);
 app.get("/expenses", db.getExpenses);
+app.get("/expenses/:expense_id", db.getExpenseById);
 app.put("/expenses/:expense_id", db.updateExpense);
 app.delete("/expenses/:expense_id", db.deleteExpense);
 

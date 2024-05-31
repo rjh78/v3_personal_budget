@@ -256,6 +256,25 @@ const getExpenses = (req, res, next) => {
   });
 };
 
+const getExpenseById = (req, res) => {
+  let searchId = Number(req.params.expense_id);
+  pool.query(
+    "SELECT * FROM expense WHERE expense_id = $1",
+    [searchId],
+    (error, results) => {
+      if (error) {
+        return next(error);
+      }
+      if (results.rowCount === 0) {
+        res
+          .status(404)
+          .send(`Expense Id ${searchId} not found, possibly a deleted record.`);
+      }
+      res.status(200).json(results.rows);
+    }
+  );
+};
+
 const updateExpense = (req, res, next) => {
   let searchId = Number(req.params.expense_id);
   const defaultValues = {
@@ -334,6 +353,7 @@ module.exports = {
   deleteCategory,
   addExpense,
   getExpenses,
+  getExpenseById,
   deleteExpense,
   updateExpense,
 };
