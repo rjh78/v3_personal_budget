@@ -256,6 +256,54 @@ const getExpenses = (req, res, next) => {
   });
 };
 
+const updateExpense = (req, res, next) => {
+  let searchId = Number(req.params.expense_id);
+  const defaultValues = {
+    date: null,
+    amount: 0,
+    description: null,
+    payment_method: null,
+    entity_id: null,
+    entity_type: null,
+    category_id: null,
+  };
+
+  const {
+    date,
+    amount,
+    description,
+    payment_method,
+    entity_id,
+    entity_type,
+    category_id,
+  } = { ...defaultValues, ...req.body };
+
+  pool.query(
+    "UPDATE expense SET date = COALESCE($1::date, date), amount = COALESCE($2::numeric, amount), description = COALESCE($3::text, description), payment_method = COALESCE($4::text, payment_method), entity_id = COALESCE($5::numeric, entity_id), entity_type = COALESCE($6::text, entity_type), category_id = COALESCE($7::numeric, category_id) WHERE expense_id = $8 RETURNING *",
+    [
+      date,
+      amount,
+      description,
+      payment_method,
+      entity_id,
+      entity_type,
+      category_id,
+      searchId,
+    ],
+    (error, results) => {
+      if (error) {
+        return next(error);
+      }
+      if (results.rowCount === 0) {
+        return next(
+          new Error(`Expense ID: ${searchId} not found. No update done.`)
+        );
+      }
+      res.status(200).json(results.rows);
+    }
+  );
+};
+
 //deletes expense specified by user
 const deleteExpense = (req, res, next) => {
   let searchId = Number(req.params.expense_id);
@@ -287,4 +335,5 @@ module.exports = {
   addExpense,
   getExpenses,
   deleteExpense,
+  updateExpense,
 };
