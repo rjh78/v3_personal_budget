@@ -7,6 +7,9 @@
     the Pool class from the pg module. The pg module is the official PostgreSQL 
     client for Node.js, which allows you to interact with a PostgreSQL database 
     from your Node.js application.
+
+    TO DO - POSSIBLE BUG IN UPDATE, NEED TO TEST EVERY FIELD IN UPDATE TO SEE IF IT GETS ZEROED OUT OR NOT
+            IF THE FIELD IS NOT INCLUDED IN THE REQUEST BODY. IS THE DEFAULT VALUE OVERRIDING THE EXISTING VALUE? 
 */
 require("dotenv").config();
 const { Pool } = require("pg");

@@ -3,14 +3,16 @@
     Date: April 29, 2024
     Description: Codecademy off-platform project to create API for budgeting app
 
-      TODO List:
+      TO DO List:
     1) refactor code - lots of redundant error checking
+
     2) implement "total budget" and track that with real-time
         updates
-    3) how to break app.XXX / functions from queries into separate files
-    4) implement data sanitation - npm express-validator
+    
+    3) implement data sanitation - npm express-validator
         https://www.npmjs.com/package/express-validator
-    5) more error checking
+    
+    4) more error checking
 */
 const express = require("express");
 const app = express();
